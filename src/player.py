@@ -8,6 +8,7 @@ class Player:
         self.pos_y = y
         self.inventory = []
         self.score = 0
+        self.grace_step = 0
         self.running = True
 
     # Flyttar spelaren. "dx" och "dy" är skillnaden
@@ -39,6 +40,9 @@ class Player:
 
         if target_cell == grid.cell_types["trap"]:
             self.score -= 10
+            """Once a trap has been discovered, all traps will show in the grid but still work"""
+            grid.cell_types["trap"].symbol = "X"
+            grid.set(new_x, new_y, grid.cell_types["trap"])
             print("You fell into a trap! You lose 10 points")
 
         return True
@@ -49,7 +53,10 @@ class Player:
         if command in ("w", "a", "d", "s") and self.can_move(dx, dy, g):
             maybe_item = g.get(self.pos_x + dx, self.pos_y + dy)
             self.move(dx, dy)
-            self.score -= 1
+            if self.grace_step != 0:
+                self.grace_step -= 1
+            else:
+                self.score -= 1
 
         if isinstance(maybe_item, (pickups.Item, pickups.Special_Item))\
                 :
@@ -79,11 +86,13 @@ class Player:
             else:
                 """If special_item but not chest, collect item"""
                 self.inventory.append(item.name)
+                self.grace_step = 5
         else:
             # Handle regular item
             self.score += item.value
             print(f"You found a {item.name}, +{item.value} points.")
             self.inventory.append(item.name)
+            self.grace_step = 5
 
         if item.name != "chest":
             # Remove item from grid, unless is a chest
